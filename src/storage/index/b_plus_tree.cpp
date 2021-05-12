@@ -46,17 +46,19 @@ bool BPLUSTREE_TYPE::GetValue(const KeyType &key, std::vector<ValueType> *result
   Page *leaf_page = FindLeafPage(key, false, OperationType::READ, transaction);
   assert(leaf_page != nullptr);
   LeafPage *leaf_node = reinterpret_cast<LeafPage *>(leaf_page->GetData());
-  result->resize(1);
   ValueType temp;
-  bool symbol = leaf_node->Lookup(key, &temp, comparator_);
-  (*result)[0] = temp;
+  if (leaf_node->Lookup(key, &temp, comparator_)) {
+    result->resize(1);
+    (*result)[0] = temp;
+  } else {
+    result->clear();
+  }
   if (transaction == nullptr) {
     buffer_pool_manager_->UnpinPage(leaf_page->GetPageId(), false);
   } else {
     UnpinAncestor_transaction(true, transaction);
   }
-
-  return symbol;
+  return !result->empty();
 }
 
 /*****************************************************************************
