@@ -23,21 +23,30 @@ INDEX_TEMPLATE_ARGUMENTS
 class IndexIterator {
  public:
   // you may define your own constructor based on your member variables
-  IndexIterator();
+  explicit IndexIterator(BufferPoolManager *buffer_pool_manager, int idx = -1,
+                         B_PLUS_TREE_LEAF_PAGE_TYPE *leaf = nullptr);
   ~IndexIterator();
 
+  // what's the definition of isEnd()
   bool isEnd();
 
   const MappingType &operator*();
 
   IndexIterator &operator++();
 
-  bool operator==(const IndexIterator &itr) const { throw std::runtime_error("unimplemented"); }
+  bool operator==(const IndexIterator &itr) const {
+    return this->leaf_node == itr.leaf_node && this->kv_idx == itr.kv_idx;
+  }
 
-  bool operator!=(const IndexIterator &itr) const { throw std::runtime_error("unimplemented"); }
+  bool operator!=(const IndexIterator &itr) const {
+    return this->leaf_node != itr.leaf_node || this->kv_idx != itr.kv_idx;
+  }
 
  private:
   // add your own private member variables here
+  BufferPoolManager *buffer_pool_manager_;
+  int kv_idx;
+  B_PLUS_TREE_LEAF_PAGE_TYPE *leaf_node;
 };
 
 }  // namespace bustub

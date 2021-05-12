@@ -13,6 +13,7 @@
 #include <utility>
 #include <vector>
 
+#include "storage/page/b_plus_tree_internal_page.h"
 #include "storage/page/b_plus_tree_page.h"
 
 namespace bustub {
@@ -58,10 +59,12 @@ class BPlusTreeLeafPage : public BPlusTreePage {
   int RemoveAndDeleteRecord(const KeyType &key, const KeyComparator &comparator);
 
   // Split and Merge utility methods
-  void MoveHalfTo(BPlusTreeLeafPage *recipient);
-  void MoveAllTo(BPlusTreeLeafPage *recipient);
-  void MoveFirstToEndOf(BPlusTreeLeafPage *recipient);
-  void MoveLastToFrontOf(BPlusTreeLeafPage *recipient);
+  void MoveHalfTo(BPlusTreeLeafPage *recipient, BufferPoolManager *buffer_pool_manager /*for split call*/);
+  void MoveAllTo(BPlusTreeLeafPage *recipient, const KeyType &middle_key, BufferPoolManager *buffer_pool_manager);
+  void MoveFirstToEndOf(BPlusTreeLeafPage *recipient, const KeyType &middle_key,
+                        BufferPoolManager *buffer_pool_manager);
+  void MoveLastToFrontOf(BPlusTreeLeafPage *recipient, const KeyType &middle_key,
+                         BufferPoolManager *buffer_pool_manager);
 
  private:
   void CopyNFrom(MappingType *items, int size);

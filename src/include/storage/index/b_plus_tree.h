@@ -14,6 +14,7 @@
 #include <string>
 #include <vector>
 
+#include "common/logger.h"
 #include "concurrency/transaction.h"
 #include "storage/index/index_iterator.h"
 #include "storage/page/b_plus_tree_internal_page.h"
@@ -43,13 +44,15 @@ class BPlusTree {
                      int leaf_max_size = LEAF_PAGE_SIZE, int internal_max_size = INTERNAL_PAGE_SIZE);
 
   // Returns true if this B+ tree has no keys and values.
-  bool IsEmpty() const;
+  // bool IsEmpty() const;
+  bool IsEmpty();
 
   // Insert a key-value pair into this B+ tree.
   bool Insert(const KeyType &key, const ValueType &value, Transaction *transaction = nullptr);
 
   // Remove a key and its value from this B+ tree.
-  void Remove(const KeyType &key, Transaction *transaction = nullptr);
+  void Remove(const KeyType &key, Transaction *transaction = nullptr,
+              OperationType ot = OperationType::OPTIMISTIC_READ);
 
   // return the value associated with a given key
   bool GetValue(const KeyType &key, std::vector<ValueType> *result, Transaction *transaction = nullptr);
@@ -77,12 +80,14 @@ class BPlusTree {
   // read data from file and remove one by one
   void RemoveFromFile(const std::string &file_name, Transaction *transaction = nullptr);
   // expose for test purpose
-  Page *FindLeafPage(const KeyType &key, bool leftMost = false);
+  Page *FindLeafPage(const KeyType &key, bool leftMost = false, OperationType ot = OperationType::READ,
+                     Transaction *transaction = nullptr);
 
  private:
   void StartNewTree(const KeyType &key, const ValueType &value);
 
-  bool InsertIntoLeaf(const KeyType &key, const ValueType &value, Transaction *transaction = nullptr);
+  bool InsertIntoLeaf(const KeyType &key, const ValueType &value, Transaction *transaction = nullptr,
+                      OperationType ot = OperationType::OPTIMISTIC_READ);
 
   void InsertIntoParent(BPlusTreePage *old_node, const KeyType &key, BPlusTreePage *new_node,
                         Transaction *transaction = nullptr);
@@ -100,7 +105,7 @@ class BPlusTree {
   template <typename N>
   void Redistribute(N *neighbor_node, N *node, int index);
 
-  bool AdjustRoot(BPlusTreePage *node);
+  bool AdjustRoot(BPlusTreePage *node, Transaction *transaction = nullptr);
 
   void UpdateRootPageId(int insert_record = 0);
 
@@ -109,6 +114,15 @@ class BPlusTree {
 
   void ToString(BPlusTreePage *page, BufferPoolManager *bpm) const;
 
+  // for concurrent
+  Page *FetchPage_transaction(page_id_t page_id, OperationType ot, Transaction *transaction);
+
+  // unpin ancestors if this node is safe
+  void UnpinAncestor_transaction(bool isread, Transaction *transaction);
+
+  // when insert or delete finish,do this,unpin page and release lock
+  void transaction_aftermath(bool isread, Transaction *transaction);
+
   // member variable
   std::string index_name_;
   page_id_t root_page_id_;
@@ -116,6 +130,7 @@ class BPlusTree {
   KeyComparator comparator_;
   int leaf_max_size_;
   int internal_max_size_;
+  std::mutex root_mutex;
 };
 
 }  // namespace bustub

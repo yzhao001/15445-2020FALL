@@ -155,7 +155,8 @@ class Transaction {
         txn_id_(txn_id),
         prev_lsn_(INVALID_LSN),
         shared_lock_set_{new std::unordered_set<RID>},
-        exclusive_lock_set_{new std::unordered_set<RID>} {
+        exclusive_lock_set_{new std::unordered_set<RID>},
+        is_rootid_locked(false) {
     // Initialize the sets that will be tracked.
     table_write_set_ = std::make_shared<std::deque<TableWriteRecord>>();
     index_write_set_ = std::make_shared<std::deque<IndexWriteRecord>>();
@@ -246,6 +247,9 @@ class Transaction {
    */
   inline void SetPrevLSN(lsn_t prev_lsn) { prev_lsn_ = prev_lsn; }
 
+  inline bool isRootLocked() { return is_rootid_locked; }
+  inline void setRootLock(bool lock) { is_rootid_locked = lock; }
+
  private:
   /** The current transaction state. */
   TransactionState state_;
@@ -272,6 +276,9 @@ class Transaction {
   std::shared_ptr<std::unordered_set<RID>> shared_lock_set_;
   /** LockManager: the set of exclusive-locked tuples held by this transaction. */
   std::shared_ptr<std::unordered_set<RID>> exclusive_lock_set_;
+
+  /**/
+  bool is_rootid_locked;
 };
 
 }  // namespace bustub
