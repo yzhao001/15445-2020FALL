@@ -73,7 +73,7 @@ bool InsertExecutor::do_child_executor(std::vector<Tuple> &child_tuple) {
       child_tuple.push_back(tuple);
     }
   } catch (Exception &e) {
-    // TODO(student): handle exceptions
+    throw Exception(ExceptionType::CHILD_EXE_FAIL, "InsertExecutor:child execute error.");
     return false;
   }
   return true;

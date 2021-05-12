@@ -45,8 +45,21 @@ class NestedLoopJoinExecutor : public AbstractExecutor {
 
   bool Next(Tuple *tuple, RID *rid) override;
 
+  bool do_child_executor(std::vector<Tuple> &child_tuple, AbstractExecutor *child_executor);
+  Tuple merge_left_right(Tuple &left, const Schema *left_schema, Tuple &right, const Schema *right_schema,
+                         const Schema *output_schema);
+  void getValues(Tuple &tuple, const Schema *schema, std::vector<Value> &values);
+
  private:
   /** The NestedLoop plan node to be executed. */
   const NestedLoopJoinPlanNode *plan_;
+  Catalog *catalog;
+  TableMetadata *table_info_;
+  TableHeap *table_heap;
+
+  std::unique_ptr<AbstractExecutor> left_executor_;
+  std::unique_ptr<AbstractExecutor> right_executor_;
+  std::vector<Tuple> res;  // return tuple in Next()
+  uint32_t idx{0};
 };
 }  // namespace bustub
