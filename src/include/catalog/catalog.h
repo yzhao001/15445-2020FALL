@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <stdexcept>
 #include <string>
 #include <unordered_map>
 #include <utility>
@@ -77,14 +78,32 @@ class Catalog {
    */
   TableMetadata *CreateTable(Transaction *txn, const std::string &table_name, const Schema &schema) {
     BUSTUB_ASSERT(names_.count(table_name) == 0, "Table names should be unique!");
-    return nullptr;
+    table_oid_t tod = next_table_oid_++;
+    /* TableHeap *tablheap = new TableHeap(bpm_, lock_manager_, log_manager_, txn);
+    TableMetadata *newtable = new TableMetadata(schema, table_name, std::unique_ptr<TableHeap>(tablheap), tod); */
+    auto tableheap = std::make_unique<TableHeap>(bpm_, lock_manager_, log_manager_, txn);
+    auto newtable = std::make_unique<TableMetadata>(schema, table_name, std::move(tableheap), tod);
+    tables_[tod] = std::move(newtable);
+    names_[table_name] = tod;
+    return tables_[tod].get();
   }
 
   /** @return table metadata by name */
-  TableMetadata *GetTable(const std::string &table_name) { return nullptr; }
+  TableMetadata *GetTable(const std::string &table_name) {
+    if (names_.find(table_name) == names_.end()) {
+      throw std::out_of_range("table name not exist");  // Exception(std::out_of_range);
+      return nullptr;
+    }
+    return GetTable(names_[table_name]);
+  }
 
   /** @return table metadata by oid */
-  TableMetadata *GetTable(table_oid_t table_oid) { return nullptr; }
+  TableMetadata *GetTable(table_oid_t table_oid) {
+    if (tables_.find(table_oid) == tables_.end()) {
+      return nullptr;
+    }
+    return tables_[table_oid].get();
+  }
 
   /**
    * Create a new index, populate existing data of the table and return its metadata.
@@ -101,14 +120,55 @@ class Catalog {
   IndexInfo *CreateIndex(Transaction *txn, const std::string &index_name, const std::string &table_name,
                          const Schema &schema, const Schema &key_schema, const std::vector<uint32_t> &key_attrs,
                          size_t keysize) {
-    return nullptr;
+    index_oid_t index_oid = next_index_oid_++;
+    // auto indexMetadata = std::make_unique<IndexMetadata>(index_name, table_name, &schema, key_attrs);
+    auto indexMetadata = new IndexMetadata(index_name, table_name, &schema, key_attrs);
+    auto bPlusTree_index_unique =
+        std::make_unique<BPlusTreeIndex<KeyType, ValueType, KeyComparator>>(indexMetadata, bpm_);
+    // add index for each tuple in BPlusTree
+    TableHeap *table_heap = GetTable(table_name)->table_.get();
+    for (auto itor = table_heap->Begin(txn); itor != table_heap->End(); itor++) {
+      bPlusTree_index_unique->InsertEntry(itor->KeyFromTuple(schema, key_schema, key_attrs), itor->GetRid(), txn);
+    }
+    // insert into the hash
+    auto newIndex = std::make_unique<IndexInfo>(key_schema, index_name, std::move(bPlusTree_index_unique), index_oid,
+                                                table_name, keysize);
+    indexes_[index_oid] = std::move(newIndex);
+    std::unordered_map<std::string, index_oid_t> &indexname_indexoid = index_names_[table_name];
+    indexname_indexoid[index_name] = index_oid;
+
+    return indexes_[index_oid].get();
   }
 
-  IndexInfo *GetIndex(const std::string &index_name, const std::string &table_name) { return nullptr; }
+  IndexInfo *GetIndex(const std::string &index_name, const std::string &table_name) {
+    if (index_names_.find(table_name) == index_names_.end()) {
+      return nullptr;
+    }
+    std::unordered_map<std::string, index_oid_t> &name_oid = index_names_[table_name];
+    if (name_oid.find(index_name) == name_oid.end()) {
+      return nullptr;
+    }
+    return GetIndex(name_oid[index_name]);
+  }
 
-  IndexInfo *GetIndex(index_oid_t index_oid) { return nullptr; }
+  IndexInfo *GetIndex(index_oid_t index_oid) {
+    if (indexes_.find(index_oid) == indexes_.end()) {
+      return nullptr;
+    }
+    return indexes_[index_oid].get();
+  }
 
-  std::vector<IndexInfo *> GetTableIndexes(const std::string &table_name) { return std::vector<IndexInfo *>(); }
+  std::vector<IndexInfo *> GetTableIndexes(const std::string &table_name) {
+    std::vector<IndexInfo *> res;
+    if (index_names_.find(table_name) == index_names_.end()) {
+      return res;
+    }
+    std::unordered_map<std::string, index_oid_t> &name_oid = index_names_[table_name];
+    for (const auto &ele : name_oid) {
+      res.push_back(GetIndex(ele.second));
+    }
+    return res;
+  }
 
  private:
   [[maybe_unused]] BufferPoolManager *bpm_;

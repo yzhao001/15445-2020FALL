@@ -17,10 +17,66 @@ namespace bustub {
 
 InsertExecutor::InsertExecutor(ExecutorContext *exec_ctx, const InsertPlanNode *plan,
                                std::unique_ptr<AbstractExecutor> &&child_executor)
-    : AbstractExecutor(exec_ctx) {}
+    : AbstractExecutor(exec_ctx), plan_(plan), child_executor_(std::move(child_executor)) {}
 
-void InsertExecutor::Init() {}
+void InsertExecutor::Init() {
+  catalog = this->GetExecutorContext()->GetCatalog();
+  table_info = catalog->GetTable(plan_->TableOid());
+  table_heap = table_info->table_.get();
+  transaction = GetExecutorContext()->GetTransaction();
+}
 
-bool InsertExecutor::Next([[maybe_unused]] Tuple *tuple, RID *rid) { return false; }
+bool InsertExecutor::Next([[maybe_unused]] Tuple *tuple, RID *rid) {
+  // no child plan
+  if (plan_->IsRawInsert()) {
+    for (const auto &row_value : plan_->RawValues()) {
+      Tuple cur_tuple(row_value, &table_info->schema_);
+      insert_table_index(cur_tuple);
+    }
+    return false;
+  }
+  // with a child executor
+  std::vector<Tuple> child_tuple;
+  if (do_child_executor(child_tuple)) {
+    for (auto &ele : child_tuple) {
+      insert_table_index(ele);
+    }
+    return false;
+  }
+  throw Exception(ExceptionType::CHILD_EXE_FAIL, "InsertExecutor:child execute error.");
+  return false;
+}
+
+void InsertExecutor::insert_table_index(Tuple &cur_tuple) {
+  RID cur_rid;
+  // insert table
+  bool is_insert = table_heap->InsertTuple(cur_tuple, &cur_rid, transaction);
+  if (!is_insert) {
+    throw Exception(ExceptionType::OUT_OF_MEMORY, "InsertExecutor:no enough space for this tuple.");
+  }
+  // insert indexes
+  for (const auto &index_info : catalog->GetTableIndexes(table_info->name_)) {
+    auto bPlusTree_Index =
+        /*dynamic_cast<BPlusTreeIndex<GenericKey<8>, RID, GenericComparator<8>> *>*/ (index_info->index_.get());
+    bPlusTree_Index->InsertEntry(
+        cur_tuple.KeyFromTuple(table_info->schema_, *bPlusTree_Index->GetKeySchema(), bPlusTree_Index->GetKeyAttrs()),
+        cur_rid, transaction);
+  }
+}
+// get tuple from child
+bool InsertExecutor::do_child_executor(std::vector<Tuple> &child_tuple) {
+  child_executor_->Init();
+  try {
+    Tuple tuple;
+    RID rid;
+    while (child_executor_->Next(&tuple, &rid)) {
+      child_tuple.push_back(tuple);
+    }
+  } catch (Exception &e) {
+    // TODO(student): handle exceptions
+    return false;
+  }
+  return true;
+}
 
 }  // namespace bustub

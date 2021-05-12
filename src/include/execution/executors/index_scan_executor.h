@@ -27,6 +27,9 @@ namespace bustub {
  */
 
 class IndexScanExecutor : public AbstractExecutor {
+  using IndexIterator_TYPE = IndexIterator<GenericKey<8>, RID, GenericComparator<8>>;
+  using BPlusTree_IndexIterator_TYPE = BPlusTreeIndex<GenericKey<8>, RID, GenericComparator<8>>;
+
  public:
   /**
    * Creates a new index scan executor.
@@ -44,5 +47,9 @@ class IndexScanExecutor : public AbstractExecutor {
  private:
   /** The index scan plan node to be executed. */
   const IndexScanPlanNode *plan_;
+  TableMetadata *table_info;
+  IndexInfo *index_info;
+  TableHeap *table_heap;
+  IndexIterator_TYPE itor;
 };
 }  // namespace bustub

@@ -47,6 +47,9 @@ enum class ExceptionType {
   OUT_OF_MEMORY = 9,
   /** Method not implemented. */
   NOT_IMPLEMENTED = 11,
+  // can not get this tuple by rid
+  TUPLE_ERROR = 12,
+  CHILD_EXE_FAIL = 13,
 };
 
 class Exception : public std::runtime_error {

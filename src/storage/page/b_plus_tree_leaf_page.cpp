@@ -139,7 +139,7 @@ void B_PLUS_TREE_LEAF_PAGE_TYPE::MoveHalfTo(BPlusTreeLeafPage *recipient, Buffer
 INDEX_TEMPLATE_ARGUMENTS
 void B_PLUS_TREE_LEAF_PAGE_TYPE::CopyNFrom(MappingType *items, int size) {
   int off = GetSize();
-  memmove(static_cast<void *>(array + off), static_cast<const void *>(items), size * sizeof(MappingType));
+  memcpy(static_cast<void *>(array + off), static_cast<const void *>(items), size * sizeof(MappingType));
   IncreaseSize(size);
   assert(GetSize() < GetMaxSize());
 }
