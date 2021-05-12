@@ -16,9 +16,13 @@ namespace bustub {
 
 NestIndexJoinExecutor::NestIndexJoinExecutor(ExecutorContext *exec_ctx, const NestedIndexJoinPlanNode *plan,
                                              std::unique_ptr<AbstractExecutor> &&child_executor)
-    : AbstractExecutor(exec_ctx) {}
+    : AbstractExecutor(exec_ctx), plan_(plan), child_executor_(std::move(child_executor)) {}
 
-void NestIndexJoinExecutor::Init() {}
+void NestIndexJoinExecutor::Init() {
+  catalog = GetExecutorContext()->GetCatalog();
+  innerTable_info = catalog->GetTable(plan_->GetInnerTableOid());
+  innerIndex_info = catalog->GetIndex(plan_->GetIndexName(), innerTable_info->name_);
+}
 
 bool NestIndexJoinExecutor::Next(Tuple *tuple, RID *rid) { return false; }
 
