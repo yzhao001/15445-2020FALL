@@ -14,6 +14,7 @@
 
 #include <memory>
 #include <utility>
+#include <vector>
 
 #include "execution/executor_context.h"
 #include "execution/executors/abstract_executor.h"
@@ -45,10 +46,10 @@ class InsertExecutor : public AbstractExecutor {
   bool Next([[maybe_unused]] Tuple *tuple, RID *rid) override;
 
   // child exists,get the tuple from the child_executor
-  bool do_child_executor(std::vector<Tuple> &child_tuple);
+  bool do_child_executor(std::vector<Tuple> *child_tuple);
 
   // insert into the table and indexes
-  void insert_table_index(Tuple &tuple);
+  void insert_table_index(Tuple tuple);
 
  private:
   /** The insert plan node to be executed. */

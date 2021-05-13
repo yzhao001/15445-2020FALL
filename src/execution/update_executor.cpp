@@ -27,7 +27,8 @@ void UpdateExecutor::Init() {
 bool UpdateExecutor::Next([[maybe_unused]] Tuple *tuple, RID *rid) {
   child_executor_->Init();
   Transaction *transaction = GetExecutorContext()->GetTransaction();
-  Tuple old_tuple, new_tuple;
+  Tuple old_tuple;
+  Tuple new_tuple;
   RID _rid;
   try {
     while (child_executor_->Next(&old_tuple, &_rid)) {

@@ -14,6 +14,7 @@
 
 #include <memory>
 #include <utility>
+#include <vector>
 
 #include "execution/executor_context.h"
 #include "execution/executors/abstract_executor.h"
@@ -45,17 +46,14 @@ class NestedLoopJoinExecutor : public AbstractExecutor {
 
   bool Next(Tuple *tuple, RID *rid) override;
 
-  bool do_child_executor(std::vector<Tuple> &child_tuple, AbstractExecutor *child_executor);
-  Tuple merge_left_right(Tuple &left, const Schema *left_schema, Tuple &right, const Schema *right_schema,
+  bool do_child_executor(std::vector<Tuple> *child_tuple, AbstractExecutor *child_executor);
+  Tuple merge_left_right(const Tuple &left, const Schema *left_schema, const Tuple &right, const Schema *right_schema,
                          const Schema *output_schema);
-  void getValues(Tuple &tuple, const Schema *schema, std::vector<Value> &values);
+  void getValues(const Tuple &tuple, const Schema *schema, std::vector<Value> *values);
 
  private:
   /** The NestedLoop plan node to be executed. */
   const NestedLoopJoinPlanNode *plan_;
-  Catalog *catalog;
-  TableMetadata *table_info_;
-  TableHeap *table_heap;
 
   std::unique_ptr<AbstractExecutor> left_executor_;
   std::unique_ptr<AbstractExecutor> right_executor_;

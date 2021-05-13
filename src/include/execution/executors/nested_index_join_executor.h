@@ -47,6 +47,11 @@ class NestIndexJoinExecutor : public AbstractExecutor {
 
   bool Next(Tuple *tuple, RID *rid) override;
 
+  std::vector<uint32_t> getKeyattrs(const Schema *outer_schema, Schema *inner_schema);
+  Tuple merge_left_right(const Tuple &left, const Schema *left_schema, const Tuple &right, const Schema *right_schema,
+                         const Schema *output_schema);
+  void getValues(const Tuple &tuple, const Schema *schema, std::vector<Value> *values);
+
  private:
   /** The nested index join plan node. */
   const NestedIndexJoinPlanNode *plan_;

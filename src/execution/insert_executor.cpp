@@ -30,14 +30,13 @@ bool InsertExecutor::Next([[maybe_unused]] Tuple *tuple, RID *rid) {
   // no child plan
   if (plan_->IsRawInsert()) {
     for (const auto &row_value : plan_->RawValues()) {
-      Tuple cur_tuple(row_value, &table_info->schema_);
-      insert_table_index(cur_tuple);
+      insert_table_index(Tuple(row_value, &table_info->schema_));
     }
     return false;
   }
   // with a child executor
   std::vector<Tuple> child_tuple;
-  if (do_child_executor(child_tuple)) {
+  if (do_child_executor(&child_tuple)) {
     for (auto &ele : child_tuple) {
       insert_table_index(ele);
     }
@@ -47,7 +46,7 @@ bool InsertExecutor::Next([[maybe_unused]] Tuple *tuple, RID *rid) {
   return false;
 }
 
-void InsertExecutor::insert_table_index(Tuple &cur_tuple) {
+void InsertExecutor::insert_table_index(Tuple cur_tuple) {
   RID cur_rid;
   // insert table
   bool is_insert = table_heap->InsertTuple(cur_tuple, &cur_rid, transaction);
@@ -64,13 +63,13 @@ void InsertExecutor::insert_table_index(Tuple &cur_tuple) {
   }
 }
 // get tuple from child
-bool InsertExecutor::do_child_executor(std::vector<Tuple> &child_tuple) {
+bool InsertExecutor::do_child_executor(std::vector<Tuple> *child_tuple) {
   child_executor_->Init();
   try {
     Tuple tuple;
     RID rid;
     while (child_executor_->Next(&tuple, &rid)) {
-      child_tuple.push_back(tuple);
+      (*child_tuple).push_back(tuple);
     }
   } catch (Exception &e) {
     throw Exception(ExceptionType::CHILD_EXE_FAIL, "InsertExecutor:child execute error.");
