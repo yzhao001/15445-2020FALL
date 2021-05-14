@@ -47,9 +47,6 @@ class NestedLoopJoinExecutor : public AbstractExecutor {
   bool Next(Tuple *tuple, RID *rid) override;
 
   bool do_child_executor(std::vector<Tuple> *child_tuple, AbstractExecutor *child_executor);
-  Tuple merge_left_right(const Tuple &left, const Schema *left_schema, const Tuple &right, const Schema *right_schema,
-                         const Schema *output_schema);
-  void getValues(const Tuple &tuple, const Schema *schema, std::vector<Value> *values);
 
  private:
   /** The NestedLoop plan node to be executed. */

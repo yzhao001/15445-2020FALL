@@ -28,17 +28,17 @@ bool LimitExecutor::Next(Tuple *tuple, RID *rid) {
       if (num < plan_->GetOffset()) {
         num++;
         continue;
-      } else if (num < plan_->GetOffset() + plan_->GetLimit()) {
+      }
+      if (num < plan_->GetOffset() + plan_->GetLimit()) {
         num++;
         *tuple = child_tuple;
         *rid = child_rid;
         return true;
-      } else {
-        return false;
       }
+      return false;
     }
   } catch (Exception &e) {
-    Exception(ExceptionType::CHILD_EXE_FAIL, "InsertExecutor:child execute error.");
+    throw Exception(ExceptionType::CHILD_EXE_FAIL, "InsertExecutor:child execute error.");
   }
   return false;
 }

@@ -36,7 +36,7 @@ void AggregationExecutor::Init() {
       aht_.InsertCombine(MakeKey(&tuple), MakeVal(&tuple));
     }
   } catch (Exception &e) {
-    Exception(ExceptionType::CHILD_EXE_FAIL, "InsertExecutor:child execute error.");
+    throw Exception(ExceptionType::CHILD_EXE_FAIL, "InsertExecutor:child execute error.");
   }
   aht_iterator_ = aht_.Begin();
 }

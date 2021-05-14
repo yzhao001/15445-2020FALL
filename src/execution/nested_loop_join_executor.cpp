@@ -34,23 +34,14 @@ void NestedLoopJoinExecutor::Init() {
           plan_->Predicate()
               ->EvaluateJoin(&l1, left_executor_->GetOutputSchema(), &r1, right_executor_->GetOutputSchema())
               .GetAs<bool>()) {
-        res.push_back(merge_left_right(l1, left_executor_->GetOutputSchema(), r1, right_executor_->GetOutputSchema(),
-                                       GetOutputSchema()));
+        std::vector<Value> output_row;
+        for (const auto &col : GetOutputSchema()->GetColumns()) {
+          output_row.push_back(col.GetExpr()->EvaluateJoin(&l1, left_executor_->GetOutputSchema(), &r1,
+                                                           right_executor_->GetOutputSchema()));
+        }
+        res.emplace_back(Tuple(output_row, GetOutputSchema()));
       }
     }
-  }
-}
-Tuple NestedLoopJoinExecutor::merge_left_right(const Tuple &left, const Schema *left_schema, const Tuple &right,
-                                               const Schema *right_schema, const Schema *output_schema) {
-  std::vector<Value> values;
-  getValues(left, left_schema, &values);
-  getValues(right, right_schema, &values);
-  return Tuple(values, output_schema);
-}
-
-void NestedLoopJoinExecutor::getValues(const Tuple &tuple, const Schema *schema, std::vector<Value> *values) {
-  for (uint32_t i = 0; i < schema->GetColumnCount(); i++) {
-    (*values).push_back(tuple.GetValue(schema, i));
   }
 }
 

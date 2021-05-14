@@ -23,11 +23,11 @@ void DeleteExecutor::Init() {
   catalog = GetExecutorContext()->GetCatalog();
   table_info_ = catalog->GetTable(plan_->TableOid());
   table_heap = table_info_->table_.get();
+  transaction = GetExecutorContext()->GetTransaction();
 }
 
 bool DeleteExecutor::Next([[maybe_unused]] Tuple *tuple, RID *rid) {
   child_executor_->Init();
-  Transaction *transaction = GetExecutorContext()->GetTransaction();
   Tuple _tuple;
   RID _rid;
   try {

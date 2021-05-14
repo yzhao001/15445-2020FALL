@@ -55,5 +55,6 @@ class DeleteExecutor : public AbstractExecutor {
   Catalog *catalog;
   TableMetadata *table_info_;
   TableHeap *table_heap;
+  Transaction *transaction;
 };
 }  // namespace bustub
