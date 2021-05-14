@@ -37,8 +37,8 @@ class AggregationPlanNode : public AbstractPlanNode {
    * @param child the child plan to aggregate data over
    * @param having the having clause of the aggregation
    * @param group_bys the group by clause of the aggregation
-   * @param aggregates the expressions that we are aggregating
-   * @param agg_types the types that we are aggregating
+   * @param aggregates the expressions that we are aggregating，the cols
+   * @param agg_types the types that we are aggregating,the cols
    */
   AggregationPlanNode(const Schema *output_schema, const AbstractPlanNode *child, const AbstractExpression *having,
                       std::vector<const AbstractExpression *> &&group_bys,
