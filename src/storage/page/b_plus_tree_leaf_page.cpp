@@ -102,7 +102,12 @@ int B_PLUS_TREE_LEAF_PAGE_TYPE::Insert(const KeyType &key, const ValueType &valu
   assert(GetSize() + 1 <= GetMaxSize());
   int idx = KeyIndex(key, comparator);
   if (comparator(array[idx].first, key) == 0) {
-    array[idx].second = value;
+    // check idx to avoid bugs,if size == 0,insert key with 0,comp equals,but we still need to insert,this doesn't mean
+    // duplicate
+    if (idx >= GetSize()) {
+      array[idx] = MappingType(key, value);
+      IncreaseSize(1);
+    }
     return GetSize();
   }
   // if idx == getsize(), means the key to insert is greater than any key in the leafnode
@@ -110,8 +115,7 @@ int B_PLUS_TREE_LEAF_PAGE_TYPE::Insert(const KeyType &key, const ValueType &valu
     memmove(static_cast<void *>(array + idx + 1), static_cast<const void *>(array + idx),
             sizeof(MappingType) * (GetSize() - idx));
   }
-  array[idx].first = key;
-  array[idx].second = value;
+  array[idx] = MappingType(key, value);
   IncreaseSize(1);
   return GetSize();
 }

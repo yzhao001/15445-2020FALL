@@ -47,8 +47,6 @@ class NestIndexJoinExecutor : public AbstractExecutor {
 
   bool Next(Tuple *tuple, RID *rid) override;
 
-  std::vector<uint32_t> getKeyattrs(const Schema *outer_schema, Schema *inner_schema);
-
  private:
   /** The nested index join plan node. */
   const NestedIndexJoinPlanNode *plan_;
@@ -57,6 +55,5 @@ class NestIndexJoinExecutor : public AbstractExecutor {
   Catalog *catalog;
   TableMetadata *innerTable_info;
   IndexInfo *innerIndex_info;
-  std::vector<uint32_t> Keyattrs{};
 };
 }  // namespace bustub

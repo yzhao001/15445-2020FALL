@@ -51,7 +51,7 @@ bool BPLUSTREE_TYPE::GetValue(const KeyType &key, std::vector<ValueType> *result
     result->resize(1);
     (*result)[0] = temp;
   } else {
-    result->clear();
+    result->resize(0);
   }
   if (transaction == nullptr) {
     buffer_pool_manager_->UnpinPage(leaf_page->GetPageId(), false);

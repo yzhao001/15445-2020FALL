@@ -22,7 +22,7 @@ void NestIndexJoinExecutor::Init() {
   catalog = GetExecutorContext()->GetCatalog();
   innerTable_info = catalog->GetTable(plan_->GetInnerTableOid());
   innerIndex_info = catalog->GetIndex(plan_->GetIndexName(), innerTable_info->name_);
-  Keyattrs = getKeyattrs(plan_->OuterTableSchema(), &innerIndex_info->key_schema_);
+  child_executor_->Init();
 }
 
 bool NestIndexJoinExecutor::Next(Tuple *tuple, RID *rid) {
@@ -30,12 +30,24 @@ bool NestIndexJoinExecutor::Next(Tuple *tuple, RID *rid) {
   Tuple inner_tuple;
   RID outer_rid;
   if (child_executor_->Next(&outer_tuple, &outer_rid)) {
-    Tuple key_tuple = outer_tuple.KeyFromTuple(*plan_->OuterTableSchema(), innerIndex_info->key_schema_, Keyattrs);
+    std::vector<Value> vals{
+        plan_->Predicate()->GetChildAt(0)->Evaluate(&outer_tuple, child_executor_->GetOutputSchema())};
+    Tuple key_tuple(vals, &innerIndex_info->key_schema_);
+    // get RID
     std::vector<RID> value_rid;
     innerIndex_info->index_->ScanKey(key_tuple, &value_rid, GetExecutorContext()->GetTransaction());
-    // no need to predict
-    assert(value_rid.size() == 1);
+    if (value_rid.empty()) {
+      return Next(tuple, rid);
+    }
     innerTable_info->table_->GetTuple(value_rid[0], &inner_tuple, GetExecutorContext()->GetTransaction());
+    // check if match
+    bool ismatch = plan_->Predicate()
+                       ->EvaluateJoin(&outer_tuple, plan_->OuterTableSchema(), &inner_tuple, &innerTable_info->schema_)
+                       .GetAs<bool>();
+    if (!ismatch) {
+      return Next(tuple, rid);
+    }
+    // get output tuple
     std::vector<Value> output_row;
     for (const auto &col : GetOutputSchema()->GetColumns()) {
       output_row.push_back(col.GetExpr()->EvaluateJoin(&outer_tuple, plan_->OuterTableSchema(), &inner_tuple,
@@ -45,13 +57,6 @@ bool NestIndexJoinExecutor::Next(Tuple *tuple, RID *rid) {
     return true;
   }
   return false;
-}
-std::vector<uint32_t> NestIndexJoinExecutor::getKeyattrs(const Schema *outer_schema, Schema *inner_schema) {
-  std::vector<uint32_t> key_attrs;
-  for (const auto &col : inner_schema->GetColumns()) {
-    key_attrs.push_back(outer_schema->GetColIdx(col.GetName()));
-  }
-  return key_attrs;
 }
 
 }  // namespace bustub

@@ -97,7 +97,7 @@ bool BufferPoolManager::UnpinPageImpl(page_id_t page_id, bool is_dirty) {
   }
   frame_id_t frame_num = page_table_[page_id];
   // check for lock ,release lock before unpin reach 0
-  assert(pages_[frame_num].GetPinCount() > 0);
+  //  assert(pages_[frame_num].GetPinCount() > 0);
   Page *ptr = pages_ + frame_num;
   ptr->is_dirty_ |= is_dirty;
   if (--ptr->pin_count_ == 0) {

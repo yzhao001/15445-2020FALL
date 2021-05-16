@@ -41,7 +41,9 @@ bool IndexScanExecutor::Next(Tuple *tuple, RID *rid) {
   }
   ++itor;
   Tuple out_tuple(vals, output_schema);
-  bool ismatch = plan_->GetPredicate()->Evaluate(&out_tuple, output_schema).GetAs<bool>();
+  bool ismatch = plan_->GetPredicate() == nullptr
+                     ? true
+                     : plan_->GetPredicate()->Evaluate(&out_tuple, output_schema).GetAs<bool>();
   if (ismatch) {
     *tuple = out_tuple;
     *rid = cur_rid;
