@@ -40,13 +40,13 @@ bool NestIndexJoinExecutor::Next(Tuple *tuple, RID *rid) {
       return Next(tuple, rid);
     }
     innerTable_info->table_->GetTuple(value_rid[0], &inner_tuple, GetExecutorContext()->GetTransaction());
-    // check if match
-    bool ismatch = plan_->Predicate()
+    // check if match,no need to do this
+    /* bool ismatch = plan_->Predicate()
                        ->EvaluateJoin(&outer_tuple, plan_->OuterTableSchema(), &inner_tuple, &innerTable_info->schema_)
                        .GetAs<bool>();
     if (!ismatch) {
       return Next(tuple, rid);
-    }
+    } */
     // get output tuple
     std::vector<Value> output_row;
     for (const auto &col : GetOutputSchema()->GetColumns()) {
