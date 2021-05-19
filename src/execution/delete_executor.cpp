@@ -24,10 +24,10 @@ void DeleteExecutor::Init() {
   table_info_ = catalog->GetTable(plan_->TableOid());
   table_heap = table_info_->table_.get();
   transaction = GetExecutorContext()->GetTransaction();
+  child_executor_->Init();
 }
 
 bool DeleteExecutor::Next([[maybe_unused]] Tuple *tuple, RID *rid) {
-  child_executor_->Init();
   Tuple _tuple;
   RID _rid;
   try {

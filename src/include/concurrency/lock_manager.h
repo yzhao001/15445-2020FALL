@@ -138,6 +138,8 @@ class LockManager {
 
   /** Lock table for lock requests. */
   std::unordered_map<RID, LockRequestQueue> lock_table_;
+  /** mark this rid if X lock */
+  std::unordered_map<RID, bool> rid_exclusive_;
   /** Waits-for graph representation. */
   std::unordered_map<txn_id_t, std::vector<txn_id_t>> waits_for_;
 };
