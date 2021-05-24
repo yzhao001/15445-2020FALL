@@ -30,15 +30,26 @@ void DeleteExecutor::Init() {
 bool DeleteExecutor::Next([[maybe_unused]] Tuple *tuple, RID *rid) {
   Tuple _tuple;
   RID _rid;
+  LockManager *lock_mgr = GetExecutorContext()->GetLockManager();
   try {
     while (child_executor_->Next(&_tuple, &_rid)) {
+      if (lock_mgr != nullptr) {
+        if (transaction->IsSharedLocked(_rid)) {
+          lock_mgr->LockUpgrade(transaction, _rid);
+        } else if (!transaction->IsExclusiveLocked(_rid)) {
+          lock_mgr->LockExclusive(transaction, _rid);
+        }
+      }
       table_heap->MarkDelete(_rid, transaction);
+      transaction->GetWriteSet()->push_back(TableWriteRecord(_rid, WType::DELETE, _tuple, table_heap));
       for (const auto &index_info : catalog->GetTableIndexes(table_info_->name_)) {
         auto bPlusTree_Index =
             /*dynamic_cast<BPlusTreeIndex<GenericKey<8>, RID, GenericComparator<8>> *>*/ (index_info->index_.get());
         bPlusTree_Index->DeleteEntry(
             _tuple.KeyFromTuple(table_info_->schema_, *bPlusTree_Index->GetKeySchema(), bPlusTree_Index->GetKeyAttrs()),
             _rid, transaction);
+        transaction->GetIndexWriteSet()->push_back(
+            IndexWriteRecord(_rid, plan_->TableOid(), WType::DELETE, _tuple, index_info->index_oid_, catalog));
       }
     }
   } catch (Exception &e) {

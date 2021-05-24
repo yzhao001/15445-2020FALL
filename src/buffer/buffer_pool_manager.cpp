@@ -166,6 +166,7 @@ Page *BufferPoolManager::NewPageImpl(page_id_t *page_id) {
     disk_manager_->WritePage(dirty_pageId, ptr->GetData());
   }
   ptr->ResetMemory();
+  disk_manager_->WritePage(newid, ptr->GetData());
   *page_id = newid;
   latch_.unlock();
 

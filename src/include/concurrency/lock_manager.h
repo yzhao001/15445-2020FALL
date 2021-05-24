@@ -18,6 +18,7 @@
 #include <memory>
 #include <mutex>  // NOLINT
 #include <unordered_map>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -117,6 +118,9 @@ class LockManager {
 
   /** Removes an edge from t1 -> t2. */
   void RemoveEdge(txn_id_t t1, txn_id_t t2);
+  std::vector<txn_id_t> wait_to_release(const std::list<LockRequest> &request_queue_);
+  void AddEdge(txn_id_t cur, const std::vector<txn_id_t> &wait);
+  void RemoveEdge(txn_id_t cur, const std::vector<txn_id_t> &wait);
 
   /**
    * Checks if the graph has a cycle, returning the newest transaction ID in the cycle if so.
@@ -130,6 +134,8 @@ class LockManager {
 
   /** Runs cycle detection in the background. */
   void RunCycleDetection();
+  bool dfs(txn_id_t *txn_id);
+  bool dfsUtil(txn_id_t id, std::unordered_set<txn_id_t> *visited, std::unordered_set<txn_id_t> *recstack);
 
  private:
   std::mutex latch_;
@@ -142,6 +148,8 @@ class LockManager {
   std::unordered_map<RID, bool> rid_exclusive_;
   /** Waits-for graph representation. */
   std::unordered_map<txn_id_t, std::vector<txn_id_t>> waits_for_;
+  /** RID txn is waiting for. */
+  std::unordered_map<txn_id_t, RID> txn_to_rid;
 };
 
 }  // namespace bustub

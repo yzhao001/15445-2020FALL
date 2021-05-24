@@ -41,7 +41,7 @@ namespace bustub {
  *    |_________________________^
  *
  **/
-enum class TransactionState { GROWING, SHRINKING, COMMITTED, ABORTED };
+enum class TransactionState { GROWING = 0, SHRINKING, COMMITTED, ABORTED };
 
 /**
  * Transaction isolation level.

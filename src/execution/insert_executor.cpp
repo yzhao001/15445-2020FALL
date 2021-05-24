@@ -50,6 +50,7 @@ void InsertExecutor::insert_table_index(Tuple cur_tuple) {
   RID cur_rid;
   // insert table
   bool is_insert = table_heap->InsertTuple(cur_tuple, &cur_rid, transaction);
+  transaction->GetWriteSet()->push_back(TableWriteRecord(cur_rid, WType::INSERT, cur_tuple, table_heap));
   if (!is_insert) {
     throw Exception(ExceptionType::OUT_OF_MEMORY, "InsertExecutor:no enough space for this tuple.");
   }
@@ -60,6 +61,8 @@ void InsertExecutor::insert_table_index(Tuple cur_tuple) {
     bPlusTree_Index->InsertEntry(
         cur_tuple.KeyFromTuple(table_info->schema_, *bPlusTree_Index->GetKeySchema(), bPlusTree_Index->GetKeyAttrs()),
         cur_rid, transaction);
+    transaction->GetIndexWriteSet()->push_back(
+        IndexWriteRecord(cur_rid, plan_->TableOid(), WType::INSERT, cur_tuple, index_info->index_oid_, catalog));
   }
 }
 // get tuple from child

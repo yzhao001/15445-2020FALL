@@ -27,6 +27,15 @@ bool SeqScanExecutor::Next(Tuple *tuple, RID *rid) {
   if (itor == table_heap->End()) {
     return false;
   }
+  LockManager *lock_mgr = GetExecutorContext()->GetLockManager();
+  Transaction *txn = GetExecutorContext()->GetTransaction();
+  if (lock_mgr != nullptr) {
+    if (txn->GetIsolationLevel() != IsolationLevel::READ_UNCOMMITTED) {
+      if (!txn->IsSharedLocked(itor->GetRid()) && !txn->IsExclusiveLocked(itor->GetRid())) {
+        lock_mgr->LockShared(txn, itor->GetRid());
+      }
+    }
+  }
   const Schema *output_schema = plan_->OutputSchema();
   RID original_rid = itor->GetRid();
   std::vector<Value> vals;
