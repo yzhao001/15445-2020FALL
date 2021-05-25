@@ -112,7 +112,12 @@ bool LockManager::LockUpgrade(Transaction *txn, const RID &rid) {
   std::vector<txn_id_t> vec;
   while (lock_queue.request_queue_.size() != 1 && txn->GetState() != TransactionState::ABORTED) {
     // build graph
-    vec = wait_to_release(lock_queue.request_queue_);
+    // vec = wait_to_release(lock_queue.request_queue_);
+    for (const auto &ele : lock_queue.request_queue_) {
+      if (ele.txn_id_ != txn->GetTransactionId()) {
+        vec.emplace_back(ele.txn_id_);
+      }
+    }
     AddEdge(txn->GetTransactionId(), vec);
     // add rid the txn is waiting
     txn_to_rid[txn->GetTransactionId()] = rid;
@@ -167,7 +172,7 @@ bool LockManager::Unlock(Transaction *txn, const RID &rid) {
   switch (txn_lockmode) {
     case LockMode::SHARED: {
       txn->GetSharedLockSet()->erase(rid);
-      if (request_queue.empty()) {
+      if (request_queue.empty() || (lock_queue.upgrading_ && request_queue.size() == 1)) {
         // notiy_all or notify_one, if there is a e_lock waiting and  a upgrade_lock waiting
         lock_queue.cv_.notify_all();
       }

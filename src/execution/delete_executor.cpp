@@ -41,7 +41,7 @@ bool DeleteExecutor::Next([[maybe_unused]] Tuple *tuple, RID *rid) {
         }
       }
       table_heap->MarkDelete(_rid, transaction);
-      transaction->GetWriteSet()->push_back(TableWriteRecord(_rid, WType::DELETE, _tuple, table_heap));
+      // transaction->GetWriteSet()->push_back(TableWriteRecord(_rid, WType::DELETE, _tuple, table_heap));
       for (const auto &index_info : catalog->GetTableIndexes(table_info_->name_)) {
         auto bPlusTree_Index =
             /*dynamic_cast<BPlusTreeIndex<GenericKey<8>, RID, GenericComparator<8>> *>*/ (index_info->index_.get());
@@ -50,6 +50,9 @@ bool DeleteExecutor::Next([[maybe_unused]] Tuple *tuple, RID *rid) {
             _rid, transaction);
         transaction->GetIndexWriteSet()->push_back(
             IndexWriteRecord(_rid, plan_->TableOid(), WType::DELETE, _tuple, index_info->index_oid_, catalog));
+      }
+      if (transaction->GetIsolationLevel() == IsolationLevel::READ_COMMITTED && lock_mgr != nullptr) {
+        lock_mgr->Unlock(transaction, _rid);
       }
     }
   } catch (Exception &e) {

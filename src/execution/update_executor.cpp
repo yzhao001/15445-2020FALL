@@ -42,7 +42,10 @@ bool UpdateExecutor::Next([[maybe_unused]] Tuple *tuple, RID *rid) {
       }
       new_tuple = GenerateUpdatedTuple(old_tuple);
       table_heap->UpdateTuple(new_tuple, _rid, transaction);
-      transaction->GetWriteSet()->push_back(TableWriteRecord(_rid, WType::UPDATE, old_tuple, table_heap));
+      // transaction->GetWriteSet()->push_back(TableWriteRecord(_rid, WType::UPDATE, old_tuple, table_heap));
+      if (transaction->GetIsolationLevel() == IsolationLevel::READ_COMMITTED && lock_mgr != nullptr) {
+        lock_mgr->Unlock(transaction, _rid);
+      }
     }
   } catch (Exception &e) {
     throw Exception(ExceptionType::CHILD_EXE_FAIL, "InsertExecutor:child execute error.");

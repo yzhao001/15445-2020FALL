@@ -29,21 +29,26 @@ bool SeqScanExecutor::Next(Tuple *tuple, RID *rid) {
   }
   LockManager *lock_mgr = GetExecutorContext()->GetLockManager();
   Transaction *txn = GetExecutorContext()->GetTransaction();
+  RID original_rid = itor->GetRid();
   if (lock_mgr != nullptr) {
     if (txn->GetIsolationLevel() != IsolationLevel::READ_UNCOMMITTED) {
-      if (!txn->IsSharedLocked(itor->GetRid()) && !txn->IsExclusiveLocked(itor->GetRid())) {
-        lock_mgr->LockShared(txn, itor->GetRid());
+      if (!txn->IsSharedLocked(original_rid) && !txn->IsExclusiveLocked(original_rid)) {
+        lock_mgr->LockShared(txn, original_rid);
       }
     }
   }
   const Schema *output_schema = plan_->OutputSchema();
-  RID original_rid = itor->GetRid();
   std::vector<Value> vals;
   for (const auto &col : output_schema->GetColumns()) {
     Value col_val = col.GetExpr()->Evaluate(&(*itor), &(table_info->schema_));
     vals.push_back(col_val);
   }
+  if (txn->GetIsolationLevel() == IsolationLevel::READ_COMMITTED && lock_mgr != nullptr) {
+    lock_mgr->Unlock(txn, original_rid);
+  }
   ++itor;
+  // unlock if read_commited, in read_commited,unlock will not cause shrinking
+
   Tuple out_tuple(vals, output_schema);
   const AbstractExpression *predict = plan_->GetPredicate();
   if (predict == nullptr || predict->Evaluate(&out_tuple, output_schema).GetAs<bool>()) {

@@ -50,7 +50,7 @@ void InsertExecutor::insert_table_index(Tuple cur_tuple) {
   RID cur_rid;
   // insert table
   bool is_insert = table_heap->InsertTuple(cur_tuple, &cur_rid, transaction);
-  transaction->GetWriteSet()->push_back(TableWriteRecord(cur_rid, WType::INSERT, cur_tuple, table_heap));
+  // transaction->GetWriteSet()->push_back(TableWriteRecord(cur_rid, WType::INSERT, cur_tuple, table_heap));
   if (!is_insert) {
     throw Exception(ExceptionType::OUT_OF_MEMORY, "InsertExecutor:no enough space for this tuple.");
   }
