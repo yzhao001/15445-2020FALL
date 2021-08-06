@@ -1,6 +1,6 @@
-#####all labs passed screenshot put in /pictures
+##### all labs passed screenshot put in /pictures
 1.  A bufer pool with a LRU cache.
-I originallyplan to put all operations in one function into two parts,one part is to modify the metadata with a whole lock ,another is to do the IO with cur buffer lock.when the first part is done,whole lock can be released,we can use cur buffer lock instead,of course we get the buffer lock before whole lock released,but it failed.I don't know why.Finally i use a whole lock to finish instead.
+I originallyplan to put all operations in one function into two parts,one part is to modify the metadata with a whole lock ,another is to do the IO with cur buffer lock.when the first part is done,whole lock can be released,we can use cur buffer lock instead,of course we get the buffer lock before whole lock released,but it failed.Finally i use a whole lock to finish instead.
 
 2. BplusTree Index concurrent control
 Some basic operations like insert,delete not mentioned here.Just focus on the two kind of concurrent strategies:optimistic and pessimistic.In pessimistic, define three operation type:READ,INSERT,DELETE.In optimistic, add another type: OPTIMISTIC_READ.
