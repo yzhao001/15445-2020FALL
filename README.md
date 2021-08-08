@@ -1,4 +1,3 @@
-##### all labs passed screenshot put in /pictures
 1.  A bufer pool with a LRU cache.
 I originallyplan to put all operations in one function into two parts,one part is to modify the metadata with a whole lock ,another is to do the IO with cur buffer lock.when the first part is done,whole lock can be released,we can use cur buffer lock instead,of course we get the buffer lock before whole lock released,but it failed.Finally i use a whole lock to finish instead.
 
@@ -13,7 +12,18 @@ Implement 2Pl in lock manager.An important part for this is deadlock detection, 
 Introduce some difference between READ COMMITED and REPEAT READ.
 In READ COMMITED,we release current RID just before we move next,and it won't get into SHRINGKING state.
 In REPEAT READ,we won't release locks until the trsanction is commited,once we start to release,the state change to SHRINGKING，which means we're not allowed to acquire lock.
+##### all labs passed screenshot put in /pictures
 ---------
+### concurrency control protocol introduce , extract from Database System Concepts
+#### TO Page874
+   + How to avoid phantom problems? Apply TO protocol to all data that is read by a transaction, including relation metadata and index data.  
+   In locking-based concurrency control, we can similarily solve phantom by acquiring locks on index nodes.
+   + Thomas’ Write Rule. Just one difference in write operation.If TS(Ti) < W-timestamp(Q), then Ti is attempting to write an obsolete value of Q.   
+   Hence, this write operation can be ignored. In other words,in those cases where TS(Ti) ≥ R-timestamp(Q), we ignore the obsolete write.
+#### MVCC
+   
+
+------------
 <img src="logo/bustub.svg" alt="BusTub Logo" height="200">
 
 -----------------
